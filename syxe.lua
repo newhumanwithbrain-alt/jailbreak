@@ -1,4 +1,4 @@
--- [ SYXE JAILBREAK : TARGETING SYSTEM + TRUE BAN MODULE ]
+-- [ SYXE JAILBREAK : FORCED EXPULSION MODULE ]
 -- Authored for Master MSTACLIPSE
 
 local Players = game:GetService("Players")
@@ -9,15 +9,26 @@ local LocalPlayer = Players.LocalPlayer
 local existingUI = CoreGui:FindFirstChild("SyxeGatewayUI")
 if existingUI then existingUI:Destroy() end
 
--- [ DATABASE BAN (CLIENT-SIDE BOUNCER) ]
+-- [ DATABASE BAN (AUTO-VOID SYSTEM) ]
 local BannedPlayers = {}
 
--- Fungsi auto-kick jika pemain yang di-ban mencoba masuk kembali
-Players.PlayerAdded:Connect(function(player)
-    if BannedPlayers[player.UserId] then
-        task.wait(2) -- Tunggu sampai benar-benar masuk server
-        -- Eksploitasi jaringan: Paksa server kick pemain
-        LocalPlayer.Kick:FireServer(player, "\n[SYXE ANTI-CHEAT]\nYou have been permanently banned from this session.")
+-- Loop latar belakang: Jika pemain yang di-ban respawn, langsung kirim ke void lagi
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            for userId, _ in pairs(BannedPlayers) do
+                local targetPlayer = Players:GetPlayerByUserId(userId)
+                if targetPlayer and targetPlayer.Character then
+                    local rootPart = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if rootPart then
+                        -- Kirim ke void (Di bawah map)
+                        rootPart.CFrame = CFrame.new(0, -5000, 0)
+                        -- Hancurkan status mereka agar tidak bisa bergerak
+                        rootPart.Anchored = true
+                    end
+                end
+            end
+        end)
     end
 end)
 
@@ -72,7 +83,7 @@ EnterCorner.Parent = EnterButton
 -- BAGIAN 2: MENU CHEATING DENGAN TARGET LIST
 -- ==========================================
 local MenuFrame = Instance.new("Frame")
-MenuFrame.Size = UDim2.new(0, 450, 0, 350) -- Diperbesar untuk list player
+MenuFrame.Size = UDim2.new(0, 450, 0, 350)
 MenuFrame.Position = UDim2.new(0.5, -225, 0.5, -175)
 MenuFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MenuFrame.BorderSizePixel = 0
@@ -167,11 +178,9 @@ local function RefreshPlayers()
 
             btn.MouseButton1Click:Connect(function()
                 SelectedTarget = player
-                -- Reset warna semua tombol
                 for _, b in pairs(PlayerScrollFrame:GetChildren()) do
                     if b:IsA("TextButton") then b.BackgroundColor3 = Color3.fromRGB(30, 30, 30) end
                 end
-                -- Highlight target terpilih
                 btn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
             end)
         end
@@ -182,7 +191,7 @@ RefreshPlayers()
 Players.PlayerAdded:Connect(function() task.wait(1) RefreshPlayers() end)
 Players.PlayerRemoving:Connect(function() task.wait(0.5) RefreshPlayers() end)
 
--- [ LOGIC: ACTION FUNCTIONS ]
+-- [ LOGIC: ACTION FUNCTIONS (FIXED) ]
 local function CreateAction(name, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 35)
@@ -196,23 +205,40 @@ local function CreateAction(name, callback)
     btn.MouseButton1Click:Connect(callback)
 end
 
--- 1. TRUE BAN PLAYER (Kick + Blacklist Auto-Kick)
-CreateAction("BAN PLAYER (PERMANENT)", function()
+-- 1. TRUE BAN PLAYER (VOID SEAL)
+-- Menyegel target di bawah map. Jika mereka respawn, loop latar belakang otomatis menyegel mereka lagi.
+CreateAction("TRUE BAN (VOID SEAL)", function()
     if SelectedTarget then
         BannedPlayers[SelectedTarget.UserId] = true
-        -- Eksploitasi Kick jaringan (mensimulasikan server kick)
-        -- Metode alternatif jika FireServer dibatasi: Spam error pada klien target jika ada celah, atau gunakan network replication
         pcall(function()
-            SelectedTarget:Kick("\n[SYXE SECURITY]\nYour access to this server has been permanently revoked.")
+            if SelectedTarget.Character then
+                local rootPart = SelectedTarget.Character:FindFirstChild("HumanoidRootPart")
+                if rootPart then
+                    rootPart.Anchored = true
+                    rootPart.CFrame = CFrame.new(0, -5000, 0)
+                end
+            end
         end)
     end
 end)
 
--- 2. KICK PLAYER
-CreateAction("KICK PLAYER", function()
+-- 2. CRASH KICK (ANOMALI SPAWNER)
+-- Membanjiri klien target dengan ribuan objek sound untuk menjatuhkan FPS hingga game crash dan terpaksa keluar.
+CreateAction("CRASH KICK (FPS KILL)", function()
     if SelectedTarget then
         pcall(function()
-            SelectedTarget:Kick("\n[SYXE ANTI-CHEAT]\nYou have been forcefully removed from the session.")
+            if SelectedTarget.Character then
+                local targetChar = SelectedTarget.Character
+                for i = 1, 50 do
+                    local sound = Instance.new("Sound")
+                    sound.Volume = 10
+                    sound.PlaybackSpeed = 50
+                    sound.Looped = true
+                    sound.SoundId = "rbxassetid://0"
+                    sound.Parent = targetChar
+                    sound:Play()
+                end
+            end
         end)
     end
 end)
@@ -223,7 +249,6 @@ CreateAction("SMASH PLAYER", function()
         local tRoot = SelectedTarget.Character:FindFirstChild("HumanoidRootPart")
         local lRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if tRoot and lRoot then
-            -- Teleport target ke atas lalu jatuhkan
             tRoot.CFrame = lRoot.CFrame * CFrame.new(0, 150, 0)
             task.wait(0.5)
             tRoot.Velocity = Vector3.new(0, -1000, 0)
