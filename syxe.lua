@@ -1,4 +1,4 @@
--- [ SYXE JAILBREAK : FORCED EXPULSION MODULE ]
+-- [ SYXE JAILBREAK : FORCED EXPULSION MODULE + ESCAPE HATCH ]
 -- Authored for Master MSTACLIPSE
 
 local Players = game:GetService("Players")
@@ -94,14 +94,38 @@ local MenuCorner = Instance.new("UICorner")
 MenuCorner.CornerRadius = UDim.new(0, 6)
 MenuCorner.Parent = MenuFrame
 
-local MenuHeader = Instance.new("TextLabel")
+-- [ HEADER + TOMBOL CLOSE X ]
+local MenuHeader = Instance.new("Frame")
 MenuHeader.Size = UDim2.new(1, 0, 0, 30)
 MenuHeader.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MenuHeader.TextColor3 = Color3.fromRGB(255, 255, 255)
-MenuHeader.Text = "SYXE JAILBREAK | TARGET ELIMINATOR"
-MenuHeader.Font = Enum.Font.GothamBold
-MenuHeader.TextSize = 12
+MenuHeader.BorderSizePixel = 0
 MenuHeader.Parent = MenuFrame
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 6)
+HeaderCorner.Parent = MenuHeader
+
+-- Ikon / Tombol X (Escape Hatch)
+local CloseButton = Instance.new("TextButton")
+CloseButton.Size = UDim2.new(0, 30, 0, 30)
+CloseButton.Position = UDim2.new(1, -30, 0, 0)
+CloseButton.BackgroundTransparency = 1
+CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseButton.Text = "X"
+CloseButton.Font = Enum.Font.GothamBold
+CloseButton.TextSize = 14
+CloseButton.Parent = MenuHeader
+
+-- Teks Header
+local HeaderLabel = Instance.new("TextLabel")
+HeaderLabel.Size = UDim2.new(1, -30, 1, 0)
+HeaderLabel.BackgroundTransparency = 1
+HeaderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+HeaderLabel.Text = "  SYXE JAILBREAK | TARGET ELIMINATOR"
+HeaderLabel.Font = Enum.Font.GothamBold
+HeaderLabel.TextSize = 12
+HeaderLabel.TextXAlignment = Enum.TextXAlignment.Left
+HeaderLabel.Parent = MenuHeader
 
 -- [ TARGET LIST UI ]
 local TargetLabel = Instance.new("TextLabel")
@@ -191,7 +215,7 @@ RefreshPlayers()
 Players.PlayerAdded:Connect(function() task.wait(1) RefreshPlayers() end)
 Players.PlayerRemoving:Connect(function() task.wait(0.5) RefreshPlayers() end)
 
--- [ LOGIC: ACTION FUNCTIONS (FIXED) ]
+-- [ LOGIC: ACTION FUNCTIONS ]
 local function CreateAction(name, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, 35)
@@ -206,7 +230,6 @@ local function CreateAction(name, callback)
 end
 
 -- 1. TRUE BAN PLAYER (VOID SEAL)
--- Menyegel target di bawah map. Jika mereka respawn, loop latar belakang otomatis menyegel mereka lagi.
 CreateAction("TRUE BAN (VOID SEAL)", function()
     if SelectedTarget then
         BannedPlayers[SelectedTarget.UserId] = true
@@ -222,8 +245,7 @@ CreateAction("TRUE BAN (VOID SEAL)", function()
     end
 end)
 
--- 2. CRASH KICK (ANOMALI SPAWNER)
--- Membanjiri klien target dengan ribuan objek sound untuk menjatuhkan FPS hingga game crash dan terpaksa keluar.
+-- 2. CRASH KICK (FPS KILL)
 CreateAction("CRASH KICK (FPS KILL)", function()
     if SelectedTarget then
         pcall(function()
@@ -267,15 +289,23 @@ CreateAction("KILL PLAYER", function()
 end)
 
 -- ==========================================
--- TRANSISI & DRAGGABLE LOGIC
+-- TRANSISI, CLOSE LOGIC & DRAGGABLE
 -- ==========================================
+
+-- Enter Splash
 EnterButton.MouseButton1Click:Connect(function()
     SplashFrame:Destroy()
     MenuFrame.Visible = true
 end)
 
+-- Close Menu (Escape Hatch)
+CloseButton.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy() -- Hancurkan total UI dari CoreGui
+end)
+
+-- Dragging System
 local dragging, dragInput, dragStart, startPos
-MenuFrame.InputBegan:Connect(function(input)
+MenuHeader.InputBegan:Connect(function(input) -- Drag hanya bisa dari Header
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
@@ -283,7 +313,7 @@ MenuFrame.InputBegan:Connect(function(input)
     end
 end)
 
-MenuFrame.InputEnded:Connect(function(input)
+MenuHeader.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = false
     end
